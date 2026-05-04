@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>随叶云盘 - 注册</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;font-family:Arial,sans-serif;}
+        body{background:#f5f7fa;display:flex;justify-content:center;align-items:center;min-height:100vh;}
+        .container{width:400px;background:white;padding:30px;border-radius:12px;box-shadow:0 0 10px rgba(0,0,0,0.1);}
+        h1{text-align:center;margin-bottom:20px;color:#2c3e50;}
+        .form-group{margin-bottom:20px;}
+        label{display:block;margin-bottom:8px;color:#666;}
+        input,select{width:100%;padding:10px;border:1px solid #ddd;border-radius:6px;}
+        .reg-type{display:flex;gap:10px;margin-bottom:20px;}
+        .reg-type label{width:50%;text-align:center;cursor:pointer;}
+        .reg-type input{width:auto;margin-right:5px;}
+        .code-group{display:flex;gap:10px;}
+        .code-group input{flex:1;}
+        .code-group button{flex:0 0 120px;padding:10px;background:#2ecc71;border:none;color:white;border-radius:6px;}
+        .graph-code{display:flex;gap:10px;align-items:center;}
+        .graph-code input{flex:1;}
+        .graph-code span{padding:10px;background:#eee;border-radius:6px;cursor:pointer;}
+        button{width:100%;padding:12px;background:#3498db;color:white;border:none;border-radius:6px;cursor:pointer;}
+        .msg{text-align:center;margin:15px 0;color:red;}
+        .link{text-align:center;margin-top:15px;}
+        a{color:#3498db;text-decoration:none;}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>随叶云盘 注册</h1>
+        {% with msg = get_flashed_messages() %}
+        {% if msg %}
+        <div class="msg">{{ msg[0] }}</div>
+        {% endif %}
+        {% endwith %}
+        <form method="POST">
+            <div class="reg-type">
+                <label>
+                    <input type="radio" name="reg_type" value="phone" checked> 手机号注册
+                </label>
+                <label>
+                    <input type="radio" name="reg_type" value="email"> 邮箱注册
+                </label>
+            </div>
+            <div class="form-group">
+                <label id="userLabel">手机号</label>
+                <input type="text" name="user" required id="userInput">
+            </div>
+            <div class="form-group code-group" id="emailCodeGroup" style="display:none;">
+                <input type="text" name="email_code" placeholder="邮箱验证码">
+                <button type="button" id="sendCodeBtn">发送验证码</button>
+            </div>
+            <div class="form-group">
+                <label>密码（6位字母+数字）</label>
+                <input type="password" name="pwd" required maxlength="6" minlength="6">
+            </div>
+            <div class="form-group graph-code">
+                <input type="text" name="graph_code" required maxlength="4" placeholder="图形验证码">
+                <span id="graphCode">{{ graph_code }}</span>
+            </div>
+            <button type="submit">注册</button>
+        </form>
+        <div class="link">
+            已有账号？<a href="/login">立即登录</a>
+        </div>
+    </div>
+    <script>
+        const regType = document.querySelectorAll('input[name="reg_type"]');
+        const userLabel = document.getElementById('userLabel');
+        const userInput = document.getElementById('userInput');
+        const emailCodeGroup = document.getElementById('emailCodeGroup');
+        const sendCodeBtn = document.getElementById('sendCodeBtn');
+        const graphCode = document.getElementById('graphCode');
+
+        regType.forEach(radio => {
+            radio.addEventListener('change', function(){
+                if(this.value === 'email'){
+                    userLabel.textContent = '邮箱';
+                    userInput.type = 'email';
+                    emailCodeGroup.style.display = 'flex';
+                }else{
+                    userLabel.textContent = '手机号';
+                    userInput.type = 'text';
+                    emailCodeGroup.style.display = 'none';
+                }
+            });
+        });
+
+        sendCodeBtn.addEventListener('click', function(){
+            const email = userInput.value;
+            if(!email){
+                alert('请输入邮箱');
+                return;
+            }
+            this.disabled = true;
+            this.textContent = '发送中...';
+            fetch('/send_email_code', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                body: `email=${email}`
+            }).then(res => res.json()).then(data => {
+                this.textContent = '60秒后重发';
+                let count = 60;
+                const timer = setInterval(() => {
+                    count--;
+                    this.textContent = `${count}秒后重发`;
+                    if(count <= 0){
+                        clearInterval(timer);
+                        this.disabled = false;
+                        this.textContent = '发送验证码';
+                    }
+                }, 1000);
+            });
+        });
+
+        graphCode.onclick = function(){
+            window.location.reload();
+        }
+    </script>
+</body>
+</html>

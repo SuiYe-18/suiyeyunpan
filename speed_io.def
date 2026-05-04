@@ -1,0 +1,5 @@
+LIBRARY speed_io
+EXPORTS
+fastCopy
+isOver5GB
+getFileSize
